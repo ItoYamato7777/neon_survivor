@@ -15,15 +15,26 @@ class Game:
         self.particle_manager = ParticleManager()
         self.font = pygame.font.SysFont("Arial", 24)
         self.score = 0
+        self.score = 0
         self.game_over = False
+        self.state = "PLAYING" # PLAYING, LEVEL_UP
+        self.upgrade_options = []
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_r and self.game_over:
+            if self.state == "LEVEL_UP":
+                self.handle_level_up_input(event.key)
+            elif event.key == pygame.K_r and self.game_over:
                 self.__init__(self.screen) # Restart
+            elif event.key == pygame.K_SPACE and not self.game_over:
+                 # Pass space to player manually if needed, but player handles it via get_pressed
+                 pass
 
     def update(self):
         if self.game_over:
+            return
+
+        if self.state == "LEVEL_UP":
             return
 
         dt = 1000 / FPS # Approximate dt
@@ -50,6 +61,7 @@ class Game:
                         self.enemy_manager.enemies.remove(e)
                         self.particle_manager.create_explosion(e.pos.x, e.pos.y, e.color)
                         self.score += e.score_value
+                        self.add_xp(e.score_value) # Use score value as XP for now
                     break
             if hit:
                 self.projectile_manager.projectiles.remove(p)
@@ -79,6 +91,83 @@ class Game:
 
         # Skill UI
         self.draw_skill_ui()
+
+        # XP Bar
+        self.draw_xp_bar()
+
+        if self.state == "LEVEL_UP":
+            self.draw_upgrade_menu()
+
+    def add_xp(self, amount):
+        self.player.xp += amount
+        if self.player.xp >= self.player.xp_to_next_level:
+            self.player.xp -= self.player.xp_to_next_level
+            self.player.level += 1
+            self.player.xp_to_next_level = int(self.player.xp_to_next_level * XP_GROWTH_FACTOR)
+            self.trigger_level_up()
+
+    def trigger_level_up(self):
+        self.state = "LEVEL_UP"
+        # Generate 3 options
+        options = ["multishot", "damage", "speed"]
+        self.upgrade_options = options # For now just static, could be random if we had more
+
+    def handle_level_up_input(self, key):
+        choice = -1
+        if key == pygame.K_1: choice = 0
+        elif key == pygame.K_2: choice = 1
+        elif key == pygame.K_3: choice = 2
+
+        if choice != -1 and choice < len(self.upgrade_options):
+            upgrade_type = self.upgrade_options[choice]
+            if self.player.upgrades[upgrade_type] < MAX_UPGRADE_LEVEL:
+                self.player.upgrades[upgrade_type] += 1
+                self.state = "PLAYING"
+                self.particle_manager.create_level_up_effect(self.player.pos.x, self.player.pos.y)
+
+    def draw_xp_bar(self):
+        bar_width = SCREEN_WIDTH
+        bar_height = 10
+        ratio = self.player.xp / self.player.xp_to_next_level
+        pygame.draw.rect(self.screen, (50, 50, 50), (0, SCREEN_HEIGHT - bar_height, bar_width, bar_height))
+        pygame.draw.rect(self.screen, (0, 255, 0), (0, SCREEN_HEIGHT - bar_height, bar_width * ratio, bar_height))
+
+        level_text = self.font.render(f"LVL {self.player.level}", True, (255, 255, 255))
+        self.screen.blit(level_text, (10, SCREEN_HEIGHT - 40))
+
+    def draw_upgrade_menu(self):
+        # Overlay
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill(COLOR_UI_BG)
+        self.screen.blit(overlay, (0, 0))
+
+        title = self.font.render("LEVEL UP! Choose an Upgrade", True, COLOR_UI_TEXT)
+        rect = title.get_rect(center=(SCREEN_WIDTH//2, 150))
+        self.screen.blit(title, rect)
+
+        # Options
+        start_y = 250
+        gap = 100
+
+        for i, option in enumerate(self.upgrade_options):
+            level = self.player.upgrades[option]
+            text_str = f"{i+1}. {option.upper()} (Lvl {level}/{MAX_UPGRADE_LEVEL})"
+            if level >= MAX_UPGRADE_LEVEL:
+                text_str += " - MAX"
+
+            color = COLOR_UI_TEXT
+            if level >= MAX_UPGRADE_LEVEL:
+                color = (150, 150, 150)
+
+            text = self.font.render(text_str, True, color)
+            rect = text.get_rect(center=(SCREEN_WIDTH//2, start_y + i * gap))
+
+            # Box
+            box_rect = rect.inflate(40, 20)
+            pygame.draw.rect(self.screen, COLOR_UI_SELECTED, box_rect, border_radius=10)
+            pygame.draw.rect(self.screen, COLOR_UI_BORDER, box_rect, 2, border_radius=10)
+
+            self.screen.blit(text, rect)
 
     def draw_skill_ui(self):
         # Skill Icon/Bar Background

@@ -22,7 +22,8 @@ class Particle:
 
             # Draw circle
             # Alpha is controlled by life
-            c = (*self.color, self.life)
+            alpha = max(0, min(255, int(self.life)))
+            c = (*self.color, alpha)
             pygame.draw.circle(s, c, (self.size*2, self.size*2), self.size)
 
             # Blit with ADD blend mode for glow
@@ -35,6 +36,15 @@ class ParticleManager:
     def create_explosion(self, x, y, color):
         for _ in range(15):
             self.particles.append(Particle(x, y, color))
+
+    def create_level_up_effect(self, x, y):
+        colors = [(255, 215, 0), (0, 255, 255), (255, 255, 255)] # Gold, Cyan, White
+        for _ in range(50):
+            color = random.choice(colors)
+            p = Particle(x, y, color)
+            p.velocity = pygame.math.Vector2(random.uniform(-5, 5), random.uniform(-5, 5))
+            p.life = 400 # Longer life
+            self.particles.append(p)
 
     def update(self):
         for p in self.particles[:]:

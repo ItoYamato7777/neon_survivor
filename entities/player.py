@@ -15,24 +15,15 @@ class Player:
         self.trail_positions = []
         self.trail_timer = 0
 
-    def handle_input(self):
-        keys = pygame.key.get_pressed()
-import pygame
-from settings import *
-
-class Player:
-    def __init__(self, x, y, projectile_manager):
-        self.pos = pygame.math.Vector2(x, y)
-        self.projectile_manager = projectile_manager
-        self.last_shot_time = 0
-        self.health = PLAYER_HEALTH
-
-        # Skill state
-        self.skill_active = False
-        self.skill_timer = 0
-        self.skill_cooldown_timer = 0
-        self.trail_positions = []
-        self.trail_timer = 0
+        # Roguelite stats
+        self.xp = 0
+        self.level = 1
+        self.xp_to_next_level = XP_PER_LEVEL_BASE
+        self.upgrades = {
+            "multishot": 0,
+            "damage": 0,
+            "speed": 0
+        }
 
     def handle_input(self):
         keys = pygame.key.get_pressed()
@@ -47,7 +38,7 @@ class Player:
         if keys[pygame.K_SPACE] and self.skill_cooldown_timer <= 0 and not self.skill_active:
             self.activate_skill()
 
-        speed = PLAYER_SPEED
+        speed = PLAYER_SPEED * (UPGRADE_SPEED_MULTIPLIER ** self.upgrades["speed"])
         if self.skill_active:
             speed *= SKILL_SPEED_MULTIPLIER
 
@@ -90,7 +81,22 @@ class Player:
 
         if closest_enemy and closest_dist < 400: # Range check
             direction = closest_enemy.pos - self.pos
-            self.projectile_manager.add_projectile(self.pos.x, self.pos.y, direction)
+
+            # Multishot logic
+            multishot_level = self.upgrades["multishot"]
+            angles = []
+            if multishot_level == 0:
+                angles = [0]
+            elif multishot_level == 1:
+                angles = [-5, 5] # 2 shots
+            elif multishot_level == 2:
+                angles = [-15, 0, 15] # 3 shots
+            else:
+                angles = [-15, -5, 5, 15] # 4 shots (Max)
+
+            for angle in angles:
+                rot_dir = direction.rotate(angle)
+                self.projectile_manager.add_projectile(self.pos.x, self.pos.y, rot_dir)
             self.last_shot_time = current_time
 
     def update(self, enemies):
