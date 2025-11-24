@@ -1,0 +1,30 @@
+import pygame
+
+# Screen settings
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
+FPS = 60
+TITLE = "Neon Survivor"
+
+# Colors (Neon Palette)
+COLOR_BG = (10, 10, 20)  # Dark blue-ish black
+COLOR_PLAYER = (0, 255, 255)  # Cyan
+COLOR_ENEMY_SQUARE = (255, 50, 50)  # Red
+COLOR_ENEMY_TRIANGLE = (255, 255, 0)  # Yellow
+COLOR_PROJECTILE = (255, 255, 255)  # White
+COLOR_PARTICLE = (255, 255, 255)
+
+# Game settings
+PLAYER_SPEED = 5
+PLAYER_SIZE = 20
+PLAYER_HEALTH = 100
+PLAYER_ATTACK_COOLDOWN = 500  # ms
+
+ENEMY_SPAWN_RATE = 1000  # ms
+
+# Skill settings
+SKILL_DURATION = 3000  # ms
+SKILL_COOLDOWN = 10000  # ms
+SKILL_SPEED_MULTIPLIER = 1.8
+SKILL_ATTACK_COOLDOWN_MULTIPLIER = 0.3
+COLOR_SKILL_ACTIVE = (255, 215, 0)  # Gold
