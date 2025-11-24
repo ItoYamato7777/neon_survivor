@@ -11,7 +11,7 @@ class Game:
         self.screen = screen
         self.projectile_manager = ProjectileManager()
         self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, self.projectile_manager)
-        self.enemy_manager = EnemyManager()
+        self.enemy_manager = EnemyManager(self.projectile_manager)
         self.particle_manager = ParticleManager()
         self.font = pygame.font.SysFont("Arial", 24)
         self.score = 0
@@ -66,12 +66,35 @@ class Game:
             if hit:
                 self.projectile_manager.projectiles.remove(p)
 
+        # Enemy Projectiles vs Player
+        for p in self.projectile_manager.projectiles[:]:
+            if p.owner == "enemy":
+                dist = p.pos.distance_to(self.player.pos)
+                if dist < PLAYER_SIZE + p.radius:
+                    self.player.health -= 10
+                    self.projectile_manager.projectiles.remove(p)
+                    self.particle_manager.create_explosion(self.player.pos.x, self.player.pos.y, COLOR_PLAYER)
+                    if self.player.health <= 0:
+                        self.game_over = True
+
         # Player vs Enemies
         for e in self.enemy_manager.enemies:
             dist = self.player.pos.distance_to(e.pos)
             if dist < PLAYER_SIZE + e.size:
                 self.game_over = True
                 self.particle_manager.create_explosion(self.player.pos.x, self.player.pos.y, COLOR_PLAYER)
+
+    def add_xp(self, amount):
+        self.player.xp += amount
+        if self.player.xp >= self.player.xp_to_next_level:
+            self.player.xp -= self.player.xp_to_next_level
+            self.player.level += 1
+            self.player.xp_to_next_level = int(self.player.xp_to_next_level * XP_GROWTH_FACTOR)
+            self.trigger_level_up()
+
+            # Boss Spawn Check
+            if self.player.level % 5 == 0:
+                self.enemy_manager.spawn_boss()
 
     def draw(self):
         self.projectile_manager.draw(self.screen)
