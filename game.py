@@ -1,4 +1,5 @@
 import pygame
+import asyncio
 import sys
 from settings import *
 from entities.player import Player
@@ -220,3 +221,35 @@ class Game:
             pygame.draw.rect(self.screen, (0, 255, 255), (ui_x, ui_y, width, height))
             text = self.font.render("READY (SPACE)", True, (0, 255, 255))
             self.screen.blit(text, (ui_x - 20, ui_y + 25))
+
+    async def run(self):
+        """Async main loop suitable for pygbag/WebAssembly.
+        Yields control back to the browser event loop each frame.
+        """
+        clock = pygame.time.Clock()
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    break
+                self.handle_event(event)
+
+            if not running:
+                break
+
+            # Update
+            self.update()
+
+            # Draw
+            self.screen.fill(COLOR_BG)
+            self.draw()
+
+            pygame.display.flip()
+            clock.tick(FPS)
+
+            # Yield to browser / event loop
+            await asyncio.sleep(0)
+
+        # Return control to caller; caller should call pygame.quit() / sys.exit()
+        return
