@@ -1,0 +1,20 @@
+name: pygbag_build
+on:
+  push:
+    branches:
+      - main  # メインブランチに更新があったら実行
+jobs:
+  build-pygbag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Checkout
+        run: |
+          python3 -m pip install pygbag
+          # フォルダ名ではなく、カレントディレクトリ(.)を指定するのがコツです
+          python3 -m pygbag --build .
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build/web  # pygbagが生成したWeb用フォルダを指定
+          branch: gh-pages   # 公開用の専用ブランチへ送る
